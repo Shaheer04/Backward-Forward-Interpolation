@@ -1,45 +1,10 @@
-def input_values():
-    x_count = int(input("How many x values? "))
-    x_list = []
-    for i in range(x_count):
-        x = float(input(f"Enter x value for {i + 1}: "))
-        x_list.append(x)
-    print(x_list)
-    
-    y_count = int(input("How many y values? "))
-    y_list = []
-    for i in range(y_count):
-        y = float(input(f"Enter y value for {i + 1}: "))
-        y_list.append(y)
-    print(y_list)
+import streamlit as st
 
-    return x_list, y_list
-
-
-def p_variable(x_list):
-    x_forw = float(input("X value for forward interpolation: "))
-    x_back = float(input("X value for backward interpolation: "))
-    h_list = []
-    for i in range(len(x_list) - 1):
-        difference = x_list[i + 1] - x_list[i]
-        h_list.append(round(difference, 2))
-
-    if h_list[-1] == 0:
-        print("Invalid value for difference")
-    elif h_list[-1] != h_list[-2]:
-        print("Invalid difference")
-    else:
-        h = h_list[0]
-        p_forw = (x_forw - x_list[0]) / h
-        p_forw = round(p_forw, 2)
-        p_back = (x_back - x_list[-1]) / h
-        p_back = round(p_back, 2)
-        print("h_list:", h_list)
-        print("h_value:", h)
-        print("p_forw:", p_forw)
-        print("p_back:", p_back)
-        return p_forw, p_back
-
+def p_variable(x_list, x_forw, x_back):
+    h = x_list[1] - x_list[0]
+    p_forw = (x_forw - x_list[0]) / h
+    p_back = (x_back - x_list[-1]) / h
+    return p_forw, p_back
 
 def difference_table(y_list):
     n = len(y_list)
@@ -51,10 +16,7 @@ def difference_table(y_list):
             diff = diff_table[i - 1][j + 1] - diff_table[i - 1][j]
             next_row.append(diff)
         diff_table.append(next_row)
-    print(f"Difference Table: {diff_table}")
-    print(f"Difference table length: {len(diff_table)}")
     return diff_table
-
 
 def forward_interpolation(p_forw, difference_list):
     y_o = difference_list[0][0]
@@ -65,49 +27,70 @@ def forward_interpolation(p_forw, difference_list):
         p_forw_term = p_forw_list[-1] * (p_forw - (i - 1)) / i
         p_forw_list.append(p_forw_term)
 
-    print(f"Value of p forwards: {p_forw_list}")
-
     factorial_list = [1]
     factorial = 1
     for i in range(1, len(difference_list)):
         factorial *= i
         factorial_list.append(factorial)
-    print(f"Factorial list: {factorial_list}")
 
     for i in range(1, len(difference_list)):
         forward_interpolation_result += (p_forw_list[i] * difference_list[i][0]) / factorial_list[i]
 
-    print(f"Value of Forward Interpolation: {forward_interpolation_result}")
     return forward_interpolation_result
 
-
 def backward_interpolation(p_back, difference_list):
-    y_o = difference_list[0][-1]
-    backward_interpolation_result = y_o
+    y_n = difference_list[0][-1]
+    backward_interpolation_result = y_n
     p_back_list = [1]
 
     for i in range(1, len(difference_list)):
         p_back_term = p_back_list[-1] * (p_back + (i - 1)) / i
         p_back_list.append(p_back_term)
 
-    print(f"Value of p backwards: {p_back_list}")
-
     factorial_list = [1]
     factorial = 1
     for i in range(1, len(difference_list)):
         factorial *= i
         factorial_list.append(factorial)
-    print(f"Factorial list: {factorial_list}")
 
     for i in range(1, len(difference_list)):
         backward_interpolation_result += (p_back_list[i] * difference_list[i][-1]) / factorial_list[i]
 
-    print(f"Value of Backward Interpolation: {backward_interpolation_result}")
     return backward_interpolation_result
 
+st.title("Forward and Backward Interpolation")
+st.info("This app performs forward and backward interpolation using Newton's forward and backward interpolation methods.")
 
-x_list, y_list = input_values()
-p_forw, p_back = p_variable(x_list)
-difference_list = difference_table(y_list)
-forwards_result = forward_interpolation(p_forw, difference_list)
-backwards_result = backward_interpolation(p_back, difference_list)
+x_list = []
+y_list = []
+
+x_count = st.number_input("How many x values?", min_value=2, step=1, key="x_count")
+y_count = x_count  # Ensuring the number of y values is the same as the number of x values
+
+with st.form(key='data_points_form'):
+    for i in range(x_count):
+        col1, col2 = st.columns(2)
+        with col1:
+            x_val = st.number_input(f"Enter x[{i}]", key=f"x_{i}", step=1.,format="%.2f")
+            x_list.append(x_val)
+        with col2:
+            y_val = st.number_input(f"Enter y[{i}]", key=f"y_{i}", step=1.,format="%.4f")
+            y_list.append(y_val)
+
+    x_forw = st.number_input("X value for forward interpolation", key="x_forw",step=1.,format="%.2f")
+    x_back = st.number_input("X value for backward interpolation", key="x_back",step=1.,format="%.2f")
+    submit_button = st.form_submit_button(label='Interpolate')
+
+if submit_button:
+    if len(set(x_list)) != len(x_list):
+        st.error("x values must be distinct.")
+    p_forw, p_back = p_variable(x_list, x_forw, x_back)
+    difference_list = difference_table(y_list)
+    forward_result = forward_interpolation(p_forw, difference_list)
+    backward_result = backward_interpolation(p_back, difference_list)
+
+    st.success(f"Value of Forward Interpolation: {forward_result}")
+    st.success(f"Value of Backward Interpolation: {backward_result}")
+
+st.caption("Made with ❤️ by Ashhad, Shaheer, Shahriyar, Mohsin, Emad, and Abdullah.")
+
