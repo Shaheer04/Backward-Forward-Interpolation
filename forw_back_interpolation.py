@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 def p_variable(x_list, x_forw, x_back):
     h = x_list[1] - x_list[0]
@@ -88,6 +89,12 @@ if submit_button:
     difference_list = difference_table(y_list)
     forward_result = forward_interpolation(p_forw, difference_list)
     backward_result = backward_interpolation(p_back, difference_list)
+
+    df_diff = pd.DataFrame(difference_list)
+    transpose_df = df_diff.T
+
+    st.write("Difference Table:")
+    st.table(transpose_df)
 
     st.success(f"Value of Forward Interpolation: {forward_result}")
     st.success(f"Value of Backward Interpolation: {backward_result}")

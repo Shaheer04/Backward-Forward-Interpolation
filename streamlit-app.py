@@ -29,6 +29,7 @@ if st.button("Calculate"):
     backwards_result = flt.backward_interpolation(float(x_back), difference_list)
     
     # Display the results
+    st.table(difference_list)
     st.write(f"Forward Interpolation Result: {forwards_result}")
     st.write(f"Backward Interpolation Result: {backwards_result}")
 
